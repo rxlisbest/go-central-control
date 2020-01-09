@@ -20,16 +20,16 @@ var data = map[string]interface{}{
 	},
 }
 
-var reponse = map[string]interface{}{
+var response = map[string]interface{}{
 	"code":    "0",
 	"message": "",
 }
 
 func (s *SignalController) Error(code int, message string) {
 	s.Ctx.Output.Status = code
-	reponse["code"] = code
-	reponse["message"] = message
-	s.Data["json"] = reponse // json对象
+	response["code"] = code
+	response["message"] = message
+	s.Data["json"] = response // json对象
 	s.ServeJSON()
 }
 
