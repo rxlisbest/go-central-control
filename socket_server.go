@@ -75,6 +75,7 @@ func process(worker map[string]interface{}) {
 		return
 	}
 	defer listener.Close()
+	log.Infof("Listening:%s//%s:%s", protocol.(string), host.(string), port.(string))
 
 	// 2.accept client request
 	// 3.create goroutine for each request
@@ -97,14 +98,15 @@ func process(worker map[string]interface{}) {
 
 		for {
 			id, body, err := tubeSet.Reserve(time.Duration(int(time.Duration(timeout) * time.Second)))
+			str := ""
 			if err != nil {
-				log.Error(err)
-				continue
+				str = Msg(500, "")
+			} else {
+				str = string(body)
 			}
 
 			b.Delete(id)
-			str := body
-			_, err = conn.Write(str)
+			_, err = conn.Write([]byte(str))
 			if err != nil {
 				log.Error(err)
 				conn.Close()
