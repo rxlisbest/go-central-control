@@ -58,7 +58,9 @@ func main() {
 		//create goroutine for each connect
 		go process(v.(map[string]interface{}))
 	}
-	time.Sleep(10000 * time.Second)
+	for {
+		time.Sleep(1 * time.Second)
+	}
 }
 
 func process(worker map[string]interface{}) {
