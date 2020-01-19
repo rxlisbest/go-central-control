@@ -102,7 +102,7 @@ func process(worker map[string]interface{}) {
 			id, body, err := tubeSet.Reserve(time.Duration(int(time.Duration(timeout) * time.Second)))
 			str := ""
 			if err != nil {
-				str = Msg(500, "")
+				str = Msg(500, "Heart")
 			} else {
 				str = string(body)
 			}
