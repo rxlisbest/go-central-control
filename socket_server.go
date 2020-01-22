@@ -25,7 +25,7 @@ func Msg(code int, message string) string {
 
 var log = logging.MustGetLogger("example")
 var format = logging.MustStringFormatter(
-	`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03x} %{message}%{color:reset}`,
+	`%{color}%{time} %{shortfunc} ▶ %{level:.4s} %{id:03x} %{message}%{color:reset}`,
 )
 
 func initLogging() {
@@ -59,7 +59,7 @@ func main() {
 		go process(v.(map[string]interface{}))
 	}
 	for {
-		time.Sleep(1 * time.Second)
+		time.Sleep(time.Second)
 	}
 }
 
