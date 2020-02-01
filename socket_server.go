@@ -6,6 +6,7 @@ import (
 	"github.com/astaxie/beego/config"
 	"github.com/beanstalkd/go-beanstalk"
 	"github.com/op/go-logging"
+	"./utils"
 	"net"
 	"os"
 	"time"
