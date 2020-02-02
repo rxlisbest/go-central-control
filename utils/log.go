@@ -5,12 +5,12 @@ import (
 	"os"
 )
 
-var log = logging.MustGetLogger("example")
+var Log = logging.MustGetLogger("example")
 var format = logging.MustStringFormatter(
 	`%{color}%{time} %{shortfunc} ▶ %{level:.4s} %{id:03x} %{message}%{color:reset}`,
 )
 
-func initLogging() {
+func InitLogging() {
 	backend1 := logging.NewLogBackend(os.Stderr, "", 0)
 	backend2 := logging.NewLogBackend(os.Stderr, "", 0)
 	// For messages written to backend2 we want to add some additional

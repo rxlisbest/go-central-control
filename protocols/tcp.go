@@ -1,12 +1,14 @@
-package http
+package protocols
 
 import (
+	"central-control/utils"
 	"github.com/astaxie/beego"
 	"github.com/beanstalkd/go-beanstalk"
 	"net"
+	"time"
 )
 
-func process(worker map[string]interface{}) {
+func Tcp(worker map[string]interface{}) {
 	host := worker["host"]
 	port := worker["port"]
 	protocol := worker["protocol"]
@@ -16,18 +18,18 @@ func process(worker map[string]interface{}) {
 
 	listener, err := net.Listen(protocol.(string), host.(string)+":"+port.(string))
 	if err != nil {
-		log.Error(err)
+		utils.Log.Error(err)
 		return
 	}
 	defer listener.Close()
-	log.Infof("Listening:%s//%s:%s", protocol.(string), host.(string), port.(string))
+	utils.Log.Infof("Listening:%s//%s:%s", protocol.(string), host.(string), port.(string))
 
 	// 2.accept client request
 	// 3.create goroutine for each request
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Error(err)
+			utils.Log.Error(err)
 			break
 		}
 
@@ -36,7 +38,7 @@ func process(worker map[string]interface{}) {
 		b, err := beanstalk.Dial("tcp", addr)
 		tubeSet := beanstalk.NewTubeSet(b, channel.(string))
 		if err != nil {
-			log.Error(err)
+			utils.Log.Error(err)
 			break
 		}
 		timeout, err := beego.AppConfig.Int("beanstalkdreservetimeout")
@@ -45,7 +47,7 @@ func process(worker map[string]interface{}) {
 			id, body, err := tubeSet.Reserve(time.Duration(int(time.Duration(timeout) * time.Second)))
 			str := ""
 			if err != nil {
-				str = Msg(500, "Heart")
+				str = utils.Msg(500, "Heart")
 			} else {
 				str = string(body)
 			}
@@ -53,7 +55,7 @@ func process(worker map[string]interface{}) {
 			b.Delete(id)
 			_, err = conn.Write([]byte(str))
 			if err != nil {
-				log.Error(err)
+				utils.Log.Error(err)
 				conn.Close()
 				break
 			}
