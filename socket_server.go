@@ -1,8 +1,8 @@
 package main
 
 import (
+	"central-control/protocols/tcp"
 	"central-control/utils"
-	"central-control/protocols"
 	"github.com/astaxie/beego/config"
 	"time"
 )
@@ -20,7 +20,12 @@ func main() {
 	}
 	for _, v := range workers.([]interface{}) {
 		//create goroutine for each connect
-		go protocols.Tcp(v.(map[string]interface{}))
+		switch v.(map[string]interface{})["protocol"].(string) {
+		case "tcp":
+			go tcp.Output(v.(map[string]interface{}))
+		default:
+			utils.Log.Error("Protocol not supported")
+		}
 	}
 	for {
 		time.Sleep(time.Second)
