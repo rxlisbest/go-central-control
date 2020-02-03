@@ -22,7 +22,7 @@ func main() {
 		//create goroutine for each connect
 		switch v.(map[string]interface{})["protocol"].(string) {
 		case "tcp":
-			go tcp.Output(v.(map[string]interface{}))
+			go tcp.Input(v.(map[string]interface{}))
 		default:
 			utils.Log.Error("Protocol not supported")
 		}

@@ -2,6 +2,7 @@ package tcp
 
 import (
 	"central-control/utils"
+	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/beanstalkd/go-beanstalk"
 	"net"
@@ -91,38 +92,35 @@ func Input(worker map[string]interface{}) {
 		conn, err := listener.Accept()
 		if err != nil {
 			utils.Log.Error(err)
-			break
+			continue
 		}
 
 		defer conn.Close()
+		go func() {
+			for {
+				var buf [128]byte
+				n, err := conn.Read(buf[:])
 
-		_, err = tube.Put([]byte(request), 1, 0, 120*time.Second)
+				if err != nil {
+					fmt.Printf("read from connect failed, err: %v\n", err)
+					break
+				}
+				recvStr := string(buf[:n])
+				_, err = tube.Put([]byte(recvStr), 1, 0, 120*time.Second)
+				if err != nil {
+					utils.Log.Error(err)
+					conn.Close()
+					continue
+				}
 
-		addr := beego.AppConfig.String("beanstalkdaddr") + ":" + beego.AppConfig.String("beanstalkdport")
-		b, err := beanstalk.Dial("tcp", addr)
-		tubeSet := beanstalk.NewTubeSet(b, channel.(string))
-		if err != nil {
-			utils.Log.Error(err)
-			break
-		}
-		timeout, err := beego.AppConfig.Int("beanstalkdreservetimeout")
-
-		for {
-			id, body, err := tubeSet.Reserve(time.Duration(int(time.Duration(timeout) * time.Second)))
-			str := ""
-			if err != nil {
-				str = utils.Msg(500, "Heart")
-			} else {
-				str = string(body)
+				str := utils.Msg(200, "Success")
+				_, err = conn.Write([]byte(str))
+				if err != nil {
+					utils.Log.Error(err)
+					conn.Close()
+					continue
+				}
 			}
-
-			b.Delete(id)
-			_, err = conn.Write([]byte(str))
-			if err != nil {
-				utils.Log.Error(err)
-				conn.Close()
-				break
-			}
-		}
+		}()
 	}
 }
