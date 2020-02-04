@@ -2,7 +2,6 @@ package tcp
 
 import (
 	"central-control/utils"
-	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/beanstalkd/go-beanstalk"
 	"net"
@@ -100,11 +99,12 @@ func Input(worker map[string]interface{}) {
 			for {
 				var buf [128]byte
 				n, err := conn.Read(buf[:])
-
 				if err != nil {
-					fmt.Printf("read from connect failed, err: %v\n", err)
-					break
+					utils.Log.Error(err)
+					conn.Close()
+					continue
 				}
+
 				recvStr := string(buf[:n])
 				_, err = tube.Put([]byte(recvStr), 1, 0, 120*time.Second)
 				if err != nil {
