@@ -2,6 +2,7 @@ package main
 
 import (
 	"central-control/protocols/tcp"
+	"central-control/protocols/websocket"
 	"central-control/utils"
 	"github.com/astaxie/beego/config"
 	"time"
@@ -23,6 +24,8 @@ func main() {
 		switch v.(map[string]interface{})["protocol"].(string) {
 		case "tcp":
 			go tcp.Input(v.(map[string]interface{}))
+		case "ws":
+			go websocket.Input(v.(map[string]interface{}))
 		default:
 			utils.Log.Error("Protocol not supported")
 		}

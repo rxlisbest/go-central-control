@@ -19,6 +19,12 @@
       "host": "0.0.0.0",
       "port": "2347",
       "channel": "test"
+    },
+    {
+      "protocol": "ws",
+      "host": "0.0.0.0",
+      "port": "2348",
+      "channel": "test"
     }
   ]
 }
