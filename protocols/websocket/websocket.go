@@ -16,6 +16,63 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+func Output(worker map[string]interface{}) {
+	host := worker["host"]
+	port := worker["port"]
+	protocol := worker["protocol"]
+	channel := worker["channel"]
+
+	addr := beego.AppConfig.String("beanstalkdaddr") + ":" + beego.AppConfig.String("beanstalkdport")
+	b, err := beanstalk.Dial("tcp", addr)
+	tubeSet := beanstalk.NewTubeSet(b, channel.(string))
+	if err != nil {
+		utils.Log.Error(err)
+		return
+	}
+	timeout, err := beego.AppConfig.Int("beanstalkdreservetimeout")
+
+	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+		conn, err := upgrader.Upgrade(writer, request, nil)
+		if err != nil {
+			utils.Log.Error(err)
+			return
+		}
+		defer conn.Close()
+
+		for {
+			mt, _, err := conn.ReadMessage()
+			if err != nil {
+				utils.Log.Error(err)
+				conn.Close()
+				continue
+			}
+
+			id, body, err := tubeSet.Reserve(time.Duration(int(time.Duration(timeout) * time.Second)))
+			str := ""
+			if err != nil {
+				str = utils.Msg(500, "Heart")
+			} else {
+				str = string(body)
+			}
+
+			b.Delete(id)
+
+			err = conn.WriteMessage(mt, []byte(str))
+			if err != nil {
+				utils.Log.Error(err)
+				conn.Close()
+				continue
+			}
+		}
+	})
+	utils.Log.Infof("Listening:%s//%s:%s", protocol.(string), host.(string), port.(string))
+	err = http.ListenAndServe(host.(string)+":"+port.(string), nil)
+	if err != nil {
+		utils.Log.Error(err)
+		return
+	}
+}
+
 func Input(worker map[string]interface{}) {
 	host := worker["host"]
 	port := worker["port"]
