@@ -16,7 +16,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func Output(worker map[string]interface{}) {
+func Sender(worker map[string]interface{}) {
 	host := worker["host"]
 	port := worker["port"]
 	protocol := worker["protocol"]
@@ -73,7 +73,7 @@ func Output(worker map[string]interface{}) {
 	}
 }
 
-func Input(worker map[string]interface{}) {
+func Receiver(worker map[string]interface{}) {
 	host := worker["host"]
 	port := worker["port"]
 	protocol := worker["protocol"]

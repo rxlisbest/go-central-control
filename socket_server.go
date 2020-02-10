@@ -23,9 +23,9 @@ func main() {
 		//create goroutine for each connect
 		switch v.(map[string]interface{})["protocol"].(string) {
 		case "tcp":
-			go tcp.Input(v.(map[string]interface{}))
+			go tcp.Receiver(v.(map[string]interface{}))
 		case "ws":
-			go websocket.Input(v.(map[string]interface{}))
+			go websocket.Receiver(v.(map[string]interface{}))
 		default:
 			utils.Log.Error("Protocol not supported")
 		}
@@ -38,7 +38,9 @@ func main() {
 		//create goroutine for each connect
 		switch v.(map[string]interface{})["protocol"].(string) {
 		case "tcp":
-			go tcp.Output(v.(map[string]interface{}))
+			go tcp.Sender(v.(map[string]interface{}))
+		case "ws":
+			go websocket.Sender(v.(map[string]interface{}))
 		default:
 			utils.Log.Error("Protocol not supported")
 		}
