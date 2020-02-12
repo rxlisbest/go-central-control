@@ -1,4 +1,4 @@
-package websocket
+package test
 
 import (
 	"central-control/utils"
@@ -87,8 +87,8 @@ func Receiver(worker map[string]interface{}) {
 		return
 	}
 	tube := &beanstalk.Tube{Conn: conn, Name: channel.(string)}
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+
+	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		conn, err := upgrader.Upgrade(writer, request, nil)
 		if err != nil {
 			utils.Log.Error(err)
@@ -121,7 +121,7 @@ func Receiver(worker map[string]interface{}) {
 		}()
 	})
 	utils.Log.Infof("Listening:%s//%s:%s", protocol.(string), host.(string), port.(string))
-	err = http.ListenAndServe(host.(string)+":"+port.(string), mux)
+	err = http.ListenAndServe(host.(string)+":"+port.(string), nil)
 	if err != nil {
 		utils.Log.Error(err)
 		return
