@@ -37,27 +37,25 @@ func Sender(worker map[string]interface{}) {
 			utils.Log.Error(err)
 			return
 		}
-		go func() {
-			defer conn.Close()
-			for {
-				id, body, err := tubeSet.Reserve(time.Duration(int(time.Duration(timeout) * time.Second)))
-				str := ""
-				if err != nil {
-					str = utils.Msg(500, "Heart")
-				} else {
-					str = string(body)
-				}
-
-				b.Delete(id)
-
-				err = conn.WriteMessage(1, []byte(str))
-				if err != nil {
-					utils.Log.Error(err)
-					conn.Close()
-					continue
-				}
+		defer conn.Close()
+		for {
+			id, body, err := tubeSet.Reserve(time.Duration(int(time.Duration(timeout) * time.Second)))
+			str := ""
+			if err != nil {
+				str = utils.Msg(500, "Heart")
+			} else {
+				str = string(body)
 			}
-		}()
+
+			b.Delete(id)
+
+			err = conn.WriteMessage(1, []byte(str))
+			if err != nil {
+				utils.Log.Error(err)
+				conn.Close()
+				continue
+			}
+		}
 	})
 	utils.Log.Infof("Listening:%s//%s:%s", protocol.(string), host.(string), port.(string))
 	err = http.ListenAndServe(host.(string)+":"+port.(string), mux)
@@ -88,30 +86,28 @@ func Receiver(worker map[string]interface{}) {
 			return
 		}
 		defer conn.Close()
-		go func() {
-			for {
-				mt, recvStr, err := conn.ReadMessage()
-				if err != nil {
-					utils.Log.Error(err)
-					conn.Close()
-					continue
-				}
-				_, err = tube.Put([]byte(recvStr), 1, 0, 120*time.Second)
-				if err != nil {
-					utils.Log.Error(err)
-					conn.Close()
-					continue
-				}
-
-				str := utils.Msg(200, "Success")
-				err = conn.WriteMessage(mt, []byte(str))
-				if err != nil {
-					utils.Log.Error(err)
-					conn.Close()
-					continue
-				}
+		for {
+			mt, recvStr, err := conn.ReadMessage()
+			if err != nil {
+				utils.Log.Error(err)
+				conn.Close()
+				continue
 			}
-		}()
+			_, err = tube.Put([]byte(recvStr), 1, 0, 120*time.Second)
+			if err != nil {
+				utils.Log.Error(err)
+				conn.Close()
+				continue
+			}
+
+			str := utils.Msg(200, "Success")
+			err = conn.WriteMessage(mt, []byte(str))
+			if err != nil {
+				utils.Log.Error(err)
+				conn.Close()
+				continue
+			}
+		}
 	})
 	utils.Log.Infof("Listening:%s//%s:%s", protocol.(string), host.(string), port.(string))
 	err = http.ListenAndServe(host.(string)+":"+port.(string), mux)
