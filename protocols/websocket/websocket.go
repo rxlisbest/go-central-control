@@ -37,16 +37,9 @@ func Sender(worker map[string]interface{}) {
 			utils.Log.Error(err)
 			return
 		}
-		defer conn.Close()
 		go func() {
+			defer conn.Close()
 			for {
-				mt, _, err := conn.ReadMessage()
-				if err != nil {
-					utils.Log.Error(err)
-					conn.Close()
-					continue
-				}
-
 				id, body, err := tubeSet.Reserve(time.Duration(int(time.Duration(timeout) * time.Second)))
 				str := ""
 				if err != nil {
@@ -57,7 +50,7 @@ func Sender(worker map[string]interface{}) {
 
 				b.Delete(id)
 
-				err = conn.WriteMessage(mt, []byte(str))
+				err = conn.WriteMessage(1, []byte(str))
 				if err != nil {
 					utils.Log.Error(err)
 					conn.Close()
