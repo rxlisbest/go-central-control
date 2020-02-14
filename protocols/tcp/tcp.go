@@ -34,32 +34,35 @@ func Sender(worker map[string]interface{}) {
 		}
 
 		defer conn.Close()
-		addr := beego.AppConfig.String("beanstalkdaddr") + ":" + beego.AppConfig.String("beanstalkdport")
-		b, err := beanstalk.Dial("tcp", addr)
-		tubeSet := beanstalk.NewTubeSet(b, channel.(string))
-		if err != nil {
-			utils.Log.Error(err)
-			break
-		}
-		timeout, err := beego.AppConfig.Int("beanstalkdreservetimeout")
-
-		for {
-			id, body, err := tubeSet.Reserve(time.Duration(int(time.Duration(timeout) * time.Second)))
-			str := ""
-			if err != nil {
-				str = utils.Msg(500, "Heart")
-			} else {
-				str = string(body)
-			}
-
-			b.Delete(id)
-			_, err = conn.Write([]byte(str))
+		go func() {
+			addr := beego.AppConfig.String("beanstalkdaddr") + ":" + beego.AppConfig.String("beanstalkdport")
+			b, err := beanstalk.Dial("tcp", addr)
+			tubeSet := beanstalk.NewTubeSet(b, channel.(string))
 			if err != nil {
 				utils.Log.Error(err)
-				conn.Close()
-				break
+				return
 			}
-		}
+			timeout, err := beego.AppConfig.Int("beanstalkdreservetimeout")
+
+			for {
+				id, body, err := tubeSet.Reserve(time.Duration(int(time.Duration(timeout) * time.Second)))
+				str := ""
+				if err != nil {
+					str = utils.Msg(500, "Heart")
+				} else {
+					str = string(body)
+				}
+
+				b.Delete(id)
+				_, err = conn.Write([]byte(str))
+				if err != nil {
+					utils.Log.Error(err)
+					conn.Close()
+					break
+				}
+			}
+		}()
+
 	}
 }
 
