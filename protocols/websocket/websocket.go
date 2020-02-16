@@ -2,12 +2,20 @@ package websocket
 
 import (
 	"central-control/utils"
+	"encoding/json"
 	"github.com/astaxie/beego"
 	"github.com/beanstalkd/go-beanstalk"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"time"
 )
+
+var data = map[string]interface{}{
+	"channel": 0,
+	"body": map[string]interface{}{
+
+	},
+}
 
 var upgrader = websocket.Upgrader{
 	// 跨域
@@ -69,15 +77,13 @@ func Receiver(worker map[string]interface{}) {
 	host := worker["host"]
 	port := worker["port"]
 	protocol := worker["protocol"]
-	channel := worker["channel"]
 
 	addr := beego.AppConfig.String("beanstalkdaddr") + ":" + beego.AppConfig.String("beanstalkdport")
-	conn, err := beanstalk.Dial("tcp", addr)
+	bConn, err := beanstalk.Dial("tcp", addr)
 	if err != nil {
 		utils.Log.Error(err)
 		return
 	}
-	tube := &beanstalk.Tube{Conn: conn, Name: channel.(string)}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		conn, err := upgrader.Upgrade(writer, request, nil)
@@ -93,6 +99,27 @@ func Receiver(worker map[string]interface{}) {
 				conn.Close()
 				continue
 			}
+			err = json.Unmarshal([]byte(recvStr), &data)
+			if err != nil {
+				utils.Log.Error(err)
+				continue
+			}
+
+			channel := data["channel"]
+			if channel != "0" {
+				switch channel.(type) {
+				case string:
+				default:
+					utils.Log.Error(400, "The format of the field `channel` is incorrect")
+					continue
+				}
+			} else {
+				utils.Log.Error(400, "The field `channel` is required")
+				continue
+			}
+
+			tube := &beanstalk.Tube{Conn: bConn, Name: channel.(string)}
+
 			_, err = tube.Put([]byte(recvStr), 1, 0, 120*time.Second)
 			if err != nil {
 				utils.Log.Error(err)

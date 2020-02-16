@@ -2,11 +2,19 @@ package tcp
 
 import (
 	"central-control/utils"
+	"encoding/json"
 	"github.com/astaxie/beego"
 	"github.com/beanstalkd/go-beanstalk"
 	"net"
 	"time"
 )
+
+var data = map[string]interface{}{
+	"channel": 0,
+	"body": map[string]interface{}{
+
+	},
+}
 
 func Sender(worker map[string]interface{}) {
 	host := worker["host"]
@@ -70,7 +78,6 @@ func Receiver(worker map[string]interface{}) {
 	host := worker["host"]
 	port := worker["port"]
 	protocol := worker["protocol"]
-	channel := worker["channel"]
 	// simple tcp server
 	// 1.listen ip+port
 	listener, err := net.Listen(protocol.(string), host.(string)+":"+port.(string))
@@ -82,12 +89,11 @@ func Receiver(worker map[string]interface{}) {
 	utils.Log.Infof("Listening:%s//%s:%s", protocol.(string), host.(string), port.(string))
 
 	addr := beego.AppConfig.String("beanstalkdaddr") + ":" + beego.AppConfig.String("beanstalkdport")
-	conn, err := beanstalk.Dial("tcp", addr)
+	bConn, err := beanstalk.Dial("tcp", addr)
 	if err != nil {
 		utils.Log.Error(err)
 		return
 	}
-	tube := &beanstalk.Tube{Conn: conn, Name: channel.(string)}
 	// 2.accept client request
 	// 3.create goroutine for each request
 	for {
@@ -109,6 +115,27 @@ func Receiver(worker map[string]interface{}) {
 				}
 
 				recvStr := string(buf[:n])
+				err = json.Unmarshal([]byte(recvStr), &data)
+				if err != nil {
+					utils.Log.Error(err)
+					continue
+				}
+
+				channel := data["channel"]
+				if channel != "0" {
+					switch channel.(type) {
+					case string:
+					default:
+						utils.Log.Error(400, "The format of the field `channel` is incorrect")
+						continue
+					}
+				} else {
+					utils.Log.Error(400, "The field `channel` is required")
+					continue
+				}
+
+				tube := &beanstalk.Tube{Conn: bConn, Name: channel.(string)}
+
 				_, err = tube.Put([]byte(recvStr), 1, 0, 120*time.Second)
 				if err != nil {
 					utils.Log.Error(err)

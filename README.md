@@ -7,3 +7,7 @@
 go build main.go
 go build socket_server.go
 ```
+## Data Structure
+```json
+{"channel":"test", "body": {}}
+```
