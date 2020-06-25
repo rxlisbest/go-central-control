@@ -1,7 +1,7 @@
 package routers
 
 import (
-	"central-control/controllers"
+	"go-central-control/controllers"
 	"github.com/astaxie/beego"
 )
 

@@ -1,4 +1,4 @@
-# go-central-control
+# go-go-central-control
 ## Requirement
 - go >= 1.13.5
 - beanstalkd

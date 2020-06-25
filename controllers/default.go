@@ -28,8 +28,9 @@ func (c *MainController) Get() {
 	//return
 
 	c.Data["Website"] = "rxl.net"
-	c.Data["Email"] = "astaxie@gmail.com"
-	c.TplName = "index.tpl"
+	c.Data["Email"] = "astaxie@gmail.com"               // json对象
+	c.ServeJSON()
+	return
 }
 
 func (c *MainController) Post() {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	_ "central-control/routers"
+	_ "go-central-control/routers"
 	"github.com/astaxie/beego"
 )
 

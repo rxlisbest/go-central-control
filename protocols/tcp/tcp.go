@@ -1,10 +1,10 @@
 package tcp
 
 import (
-	"central-control/utils"
 	"encoding/json"
 	"github.com/astaxie/beego"
 	"github.com/beanstalkd/go-beanstalk"
+	"go-central-control/utils"
 	"net"
 	"time"
 )
@@ -14,6 +14,65 @@ var data = map[string]interface{}{
 	"body": map[string]interface{}{
 
 	},
+}
+
+func Out(worker map[string]interface{}, mq func(msg string)) {
+	host := worker["host"]
+	port := worker["port"]
+	protocol := worker["protocol"]
+	channel := worker["channel"]
+	// simple tcp server
+	// 1.listen ip+port
+
+	listener, err := net.Listen(protocol.(string), host.(string)+":"+port.(string))
+	if err != nil {
+		utils.Log.Error(err)
+		return
+	}
+	defer listener.Close()
+	utils.Log.Infof("Listening:%s//%s:%s", protocol.(string), host.(string), port.(string))
+
+	// 2.accept client request
+	// 3.create goroutine for each request
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			utils.Log.Error(err)
+			break
+		}
+
+		defer conn.Close()
+		go func() {
+			addr := beego.AppConfig.String("beanstalkdaddr") + ":" + beego.AppConfig.String("beanstalkdport")
+			b, err := beanstalk.Dial("tcp", addr)
+			tubeSet := beanstalk.NewTubeSet(b, channel.(string))
+			if err != nil {
+				utils.Log.Error(err)
+				return
+			}
+			timeout, err := beego.AppConfig.Int("beanstalkdreservetimeout")
+
+			for {
+				id, body, err := tubeSet.Reserve(time.Duration(int(time.Duration(timeout) * time.Second)))
+				str := ""
+				if err != nil {
+					str = utils.Msg(500, "Heart")
+				} else {
+					str = string(body)
+				}
+
+				b.Delete(id)
+				_, err = conn.Write([]byte(str))
+				if err != nil {
+					utils.Log.Error(err)
+					conn.Close()
+					break
+				}
+			}
+		}()
+
+	}
+	return
 }
 
 func Sender(worker map[string]interface{}) {
@@ -72,6 +131,7 @@ func Sender(worker map[string]interface{}) {
 		}()
 
 	}
+	return
 }
 
 func Receiver(worker map[string]interface{}) {
@@ -111,7 +171,7 @@ func Receiver(worker map[string]interface{}) {
 				if err != nil {
 					utils.Log.Error(err)
 					conn.Close()
-					continue
+					break
 				}
 
 				recvStr := string(buf[:n])
@@ -140,7 +200,7 @@ func Receiver(worker map[string]interface{}) {
 				if err != nil {
 					utils.Log.Error(err)
 					conn.Close()
-					continue
+					break
 				}
 
 				str := utils.Msg(200, "Success")

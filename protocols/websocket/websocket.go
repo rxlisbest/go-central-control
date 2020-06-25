@@ -1,7 +1,7 @@
 package websocket
 
 import (
-	"central-control/utils"
+	"go-central-control/utils"
 	"encoding/json"
 	"github.com/astaxie/beego"
 	"github.com/beanstalkd/go-beanstalk"

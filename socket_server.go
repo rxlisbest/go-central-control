@@ -1,9 +1,9 @@
 package main
 
 import (
-	"central-control/protocols/tcp"
-	"central-control/protocols/websocket"
-	"central-control/utils"
+	"go-central-control/protocols/tcp"
+	"go-central-control/protocols/websocket"
+	"go-central-control/utils"
 	"github.com/astaxie/beego/config"
 	"time"
 )
